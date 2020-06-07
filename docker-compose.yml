@@ -1,0 +1,52 @@
+#versión de docker-compose 3.8 es la más reciente
+version: "3.8"
+
+volumes:
+    #Aquí se definen los volumenes/almacenamiento de los contenedores
+    GITLAB_CONFIG:
+        external: true
+    GITLAB_LOGS:
+        external: true
+    GITLAB_DATA:
+        external: true
+
+#networks:
+    #Aqué se definen las redes utilizadas por los contenedores
+
+services:
+    #Aquí se definen los diferentes servicios/contenedores
+
+    gitlab:
+        container_name: gitlab
+        restart: unless-stopped
+        image: 'gitlab/gitlab-ce:latest'
+        environment:
+            GITLAB_OMNIBUS_CONFIG: |
+                external_url 'http://localhost'
+                gitlab_rails['gitlab_shell_ssh_port'] = 2222
+        ports:
+            - '8080:80'
+            #ssh port desde el que se accede desde el exterior 'gitlab_shell_ssh_port'
+            - "2222:22"
+        volumes:
+            - GITLAB_CONFIG:/etc/gitlab
+            - GITLAB_LOGS:/var/log/gitlab
+            - GITLAB_DATA:/var/opt/gitlab
+
+
+
+##########
+    # gitlab #
+    ##########
+            #volumen para los certificados
+            # - ./ssl:/etc/gitlab/ssl:ro
+
+            # registry_external_url 'https://dominio:5050'
+            # nginx['listen_port'] = 80
+            # nginx['listen_https'] = false
+            # registry_nginx['ssl_certificate'] = "ruta al certificado (debe ser oficial)"
+            # registry_nginx['ssl_certificate_key'] = "ruta a la clave privada"
+            # nginx['proxy_set_headers'] = { 'X-Forwarded-Proto' => 'https', 'X-Forwarded-Ssl' => 'on' }
+
+            #puerto para el docker registry
+            #- "5050:5050"
