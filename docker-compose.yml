@@ -14,25 +14,35 @@ volumes:
     #Aqué se definen las redes utilizadas por los contenedores
 
 services:
-    #Aquí se definen los diferentes servicios/contenedores
 
+    haproxy:
+        depends_on: 
+            - gitlab
+        restart: unless-stopped
+        image: haproxy:2.2-dev7-alpine
+        container_name: haproxy
+        volumes:
+            - ./haproxy:/usr/local/etc/haproxy/
+        ports:
+            - "80:80"
+            - "443:443"
+    
     gitlab:
         container_name: gitlab
         restart: unless-stopped
         image: 'gitlab/gitlab-ce:latest'
         environment:
             GITLAB_OMNIBUS_CONFIG: |
-                external_url 'http://localhost'
+                external_url 'http://localhost/gitlab'
                 gitlab_rails['gitlab_shell_ssh_port'] = 2222
         ports:
-            - '8080:80'
+            # - '8080:80'
             #ssh port desde el que se accede desde el exterior 'gitlab_shell_ssh_port'
             - "2222:22"
         volumes:
             - GITLAB_CONFIG:/etc/gitlab
             - GITLAB_LOGS:/var/log/gitlab
             - GITLAB_DATA:/var/opt/gitlab
-
 
 
 ##########
@@ -50,3 +60,5 @@ services:
 
             #puerto para el docker registry
             #- "5050:5050"
+
+            # openssl req -newkey rsa:2048 -new -nodes -x509 -days 3650 -keyout key.pem -out cert.pem
