@@ -3,21 +3,28 @@ version: "3.8"
 
 volumes:
     #Aquí se definen los volumenes/almacenamiento de los contenedores
+    #Gitlab
     GITLAB_CONFIG:
         external: true
     GITLAB_LOGS:
         external: true
     GITLAB_DATA:
         external: true
+    #Nexus
+    NEXUS_DATA:
+        external: true
 
 #networks:
-    #Aqué se definen las redes utilizadas por los contenedores
+    #Aquí se definen las redes utilizadas por los contenedores
 
 services:
+
+    #--- HAProxy ---
 
     haproxy:
         depends_on: 
             - gitlab
+            - nexus
         restart: unless-stopped
         image: haproxy:2.2-dev7-alpine
         container_name: haproxy
@@ -26,11 +33,13 @@ services:
         ports:
             - "80:80"
             - "443:443"
+
+    #--- Gitlab ---
     
     gitlab:
         container_name: gitlab
         restart: unless-stopped
-        image: 'gitlab/gitlab-ce:latest'
+        image: gitlab/gitlab-ce:13.0.6-ce.0
         environment:
             GITLAB_OMNIBUS_CONFIG: |
                 external_url 'http://localhost/gitlab'
@@ -44,21 +53,18 @@ services:
             - GITLAB_LOGS:/var/log/gitlab
             - GITLAB_DATA:/var/opt/gitlab
 
+    #--- Nexus ---
+        
+    nexus:
+        container_name: nexus
+        image: sonatype/nexus3:3.24.0
+        restart: unless-stopped
+        environment:
+            - NEXUS_CONTEXT=nexus
+            - CONTEXT_PATH=nexus
+        volumes:
+            - NEXUS_DATA:/nexus-data
 
-##########
-    # gitlab #
-    ##########
-            #volumen para los certificados
-            # - ./ssl:/etc/gitlab/ssl:ro
 
-            # registry_external_url 'https://dominio:5050'
-            # nginx['listen_port'] = 80
-            # nginx['listen_https'] = false
-            # registry_nginx['ssl_certificate'] = "ruta al certificado (debe ser oficial)"
-            # registry_nginx['ssl_certificate_key'] = "ruta a la clave privada"
-            # nginx['proxy_set_headers'] = { 'X-Forwarded-Proto' => 'https', 'X-Forwarded-Ssl' => 'on' }
 
-            #puerto para el docker registry
-            #- "5050:5050"
-
-            # openssl req -newkey rsa:2048 -new -nodes -x509 -days 3650 -keyout key.pem -out cert.pem
+    

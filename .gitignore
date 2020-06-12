@@ -1,2 +1,3 @@
-*.drawio
 haproxy/haproxy.pem
+**.crt
+**.pem
