@@ -61,10 +61,11 @@ services:
         restart: unless-stopped
         environment:
             - NEXUS_CONTEXT=nexus
-            - CONTEXT_PATH=nexus
         volumes:
             - NEXUS_DATA:/nexus-data
-
+        ports:
+            - '8082:8082'
+            - '8083:8083'
 
 
     
