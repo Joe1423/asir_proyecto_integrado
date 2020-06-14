@@ -13,9 +13,13 @@ volumes:
     #Nexus
     NEXUS_DATA:
         external: true
+    #Runner
+    runner_data:
+        external: true
 
-#networks:
+# networks:
     #Aquí se definen las redes utilizadas por los contenedores
+
 
 services:
 
@@ -24,7 +28,7 @@ services:
     haproxy:
         depends_on: 
             - gitlab
-            - nexus
+            # - nexus
         restart: unless-stopped
         image: haproxy:2.2-dev7-alpine
         container_name: haproxy
@@ -42,30 +46,48 @@ services:
         image: gitlab/gitlab-ce:13.0.6-ce.0
         environment:
             GITLAB_OMNIBUS_CONFIG: |
-                external_url 'http://localhost/gitlab'
+                external_url 'http://host.docker.internal/gitlab'
                 gitlab_rails['gitlab_shell_ssh_port'] = 2222
         ports:
             # - '8080:80'
             #ssh port desde el que se accede desde el exterior 'gitlab_shell_ssh_port'
             - "2222:22"
+            - "8080:80"
         volumes:
             - GITLAB_CONFIG:/etc/gitlab
             - GITLAB_LOGS:/var/log/gitlab
             - GITLAB_DATA:/var/opt/gitlab
+            - ./haproxy/haproxy.pem:/etc/gitlab/ssl/haproxy.pem
 
     #--- Nexus ---
         
-    nexus:
-        container_name: nexus
-        image: sonatype/nexus3:3.24.0
+    # nexus:
+    #     container_name: nexus
+    #     image: sonatype/nexus3:3.24.0
+    #     restart: unless-stopped
+    #     environment:
+    #         - NEXUS_CONTEXT=nexus
+    #     volumes:
+    #         - NEXUS_DATA:/nexus-data
+    #     ports:
+    #         - '8082:8082'
+    #         - '8083:8083'
+
+    # --- Runner ---
+
+    runner:
+        depends_on: 
+            - gitlab
+        container_name: runner
+        image: gitlab/gitlab-runner
         restart: unless-stopped
-        environment:
-            - NEXUS_CONTEXT=nexus
         volumes:
-            - NEXUS_DATA:/nexus-data
-        ports:
-            - '8082:8082'
-            - '8083:8083'
+            - runner_data:/etc/gitlab-runner
+            - /var/run/docker.sock:/var/run/docker.sock
+            - ./haproxy/haproxy.pem:/etc/ssl/haproxy.pem
+            - ./runner/config.toml:/etc/gitlab-runner/config.toml
+
+
 
 
     
