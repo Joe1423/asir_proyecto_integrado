@@ -81,11 +81,22 @@ services:
         container_name: runner
         image: gitlab/gitlab-runner
         restart: unless-stopped
+        environment:
+            - RUNNER_TAG_LIST 
+            - GITLAB_URL
+            - TOKEN
+            - RUNNER_NAME
+            - RUNNER_TAG_LIST="test,proyecto"
+            # To not verify = 1
+            - RUNNER_ENV=GIT_SSL_NO_VERIFY=1
+            - DOCKER_TLS_VERIFY=false
+            - CI_SERVER_TLS_CA_FILE=/etc/ssl/haproxy.pem   
         volumes:
             - runner_data:/etc/gitlab-runner
             - /var/run/docker.sock:/var/run/docker.sock
             - ./haproxy/haproxy.pem:/etc/ssl/haproxy.pem
             - ./runner/config.toml:/etc/gitlab-runner/config.toml
+            - ./runner/register.sh:/register.sh
 
 
 
