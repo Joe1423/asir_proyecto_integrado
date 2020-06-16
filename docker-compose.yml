@@ -16,6 +16,12 @@ volumes:
     #Runner
     runner_data:
         external: true
+    #Prometheus
+    prometheus_data:
+        external: true
+    #Grafana
+    grafana_data:
+        external: true
 
 # networks:
     #Aquí se definen las redes utilizadas por los contenedores
@@ -61,17 +67,17 @@ services:
 
     #--- Nexus ---
         
-    # nexus:
-    #     container_name: nexus
-    #     image: sonatype/nexus3:3.24.0
-    #     restart: unless-stopped
-    #     environment:
-    #         - NEXUS_CONTEXT=nexus
-    #     volumes:
-    #         - NEXUS_DATA:/nexus-data
-    #     ports:
-    #         - '8082:8082'
-    #         - '8083:8083'
+    nexus:
+        container_name: nexus
+        image: sonatype/nexus3:3.24.0
+        restart: unless-stopped
+        environment:
+            - NEXUS_CONTEXT=nexus
+        volumes:
+            - NEXUS_DATA:/nexus-data
+        ports:
+            - '8082:8082'
+            - '8083:8083'
 
     # --- Runner ---
 
@@ -98,6 +104,51 @@ services:
             - ./runner/config.toml:/etc/gitlab-runner/config.toml
             - ./runner/register.sh:/register.sh
 
+    # --- CAdvisor ---
+
+    cadvisor:
+        image: google/cadvisor
+        container_name: cadvisor
+        restart: unless-stopped
+        volumes:
+            - /:/rootfs:ro
+            - /var/run:/var/run:ro
+            - /sys:/sys:ro
+            - /var/lib/docker:/var/lib/docker:ro
+
+    # --- Prometheus ---
+
+    prometheus:
+        depends_on:
+            - node_exporter
+            - cadvisor
+        image: prom/prometheus
+        container_name: prometheus
+        restart: unless-stopped
+        volumes:
+            - ./prometheus/:/etc/prometheus/
+            - prometheus_data:/prometheus
+
+    # --- NodeExporter ---
+
+    node_exporter:
+        container_name: node_exporter
+        image: prom/node-exporter
+        restart: unless-stopped
+
+    # --- Grafana ---
+
+    grafana:
+        depends_on:
+            - prometheus
+        container_name: grafana
+        image: grafana/grafana
+        restart: unless-stopped
+        environment:
+            - GF_SERVER_DOMAIN=localhost
+            - GF_SERVER_ROOT_URL=https://localhost/grafana/
+        volumes:
+            - grafana_data:/var/lib/grafana
 
 
 
